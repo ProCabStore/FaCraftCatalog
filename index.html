@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Product Catalog</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1b1b1b;
+    background: #faf9f7;
+    line-height: 1.5;
+  }
+  /* ---------- HEADER ---------- */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(255,255,255,.93);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e9e5df;
+  }
+  .header-inner {
+    max-width: 1200px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { font-size: 1.1rem; font-weight: 700; letter-spacing: .02em; margin: 0; }
+  .brand span { color: #8a7a63; font-weight: 400; font-size: .85rem; display: block; }
+  .search {
+    margin-left: auto; flex: 1 1 220px; max-width: 320px;
+    padding: 10px 14px; border: 1px solid #ddd7cf; border-radius: 999px;
+    font-size: .9rem; outline: none; background: #fff;
+  }
+  .search:focus { border-color: #8a7a63; }
+  /* ---------- FILTERS ---------- */
+  .filters {
+    max-width: 1200px; margin: 0 auto; padding: 16px 20px 4px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .chip {
+    padding: 8px 16px; border-radius: 999px; border: 1px solid #ddd7cf;
+    background: #fff; font-size: .85rem; cursor: pointer; color: #4a4a4a;
+    transition: .15s; font-family: inherit;
+  }
+  .chip:hover { border-color: #8a7a63; color: #1b1b1b; }
+  .chip.active { background: #1b1b1b; border-color: #1b1b1b; color: #fff; }
+  /* ---------- GRID ---------- */
+  .count { max-width: 1200px; margin: 0 auto; padding: 10px 20px 0; font-size: .8rem; color: #8a8a8a; }
+  .grid {
+    max-width: 1200px; margin: 0 auto; padding: 14px 20px 60px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px;
+  }
+  .card {
+    background: #fff; border: 1px solid #ece8e2; border-radius: 14px;
+    overflow: hidden; cursor: pointer; transition: .18s;
+    display: flex; flex-direction: column;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.08); }
+
+  /* === 4:5 PORTRAIT IMAGE FRAME === */
+  .thumb { aspect-ratio: 4 / 5; background: #f2eee9; overflow: hidden; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .card-body { padding: 13px 14px 16px; }
+  .cat-tag {
+    font-size: .68rem; text-transform: uppercase; letter-spacing: .09em;
+    color: #a89880; font-weight: 600;
+  }
+  .card-body h3 { margin: 4px 0 6px; font-size: .95rem; font-weight: 600; }
+  .price { font-weight: 700; font-size: .95rem; }
+  .empty { text-align: center; color: #999; padding: 60px 20px; display: none; }
+
+  /* ---------- MODAL ---------- */
+  .modal {
+    position: fixed; inset: 0; background: rgba(20,18,15,.72);
+    display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50;
+  }
+  .modal.open { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: 16px; overflow: hidden;
+    max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto;
+    display: grid; grid-template-columns: 1fr 1.1fr;
+    align-items: start;
+  }
+
+  /* === 4:5 PORTRAIT IN POP-UP TOO === */
+  .modal-img { background: #f2eee9; aspect-ratio: 4 / 5; overflow: hidden; }
+  .modal-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .modal-info { padding: 26px 26px 24px; display: flex; flex-direction: column; gap: 8px; }
+  .modal-info h2 { margin: 0; font-size: 1.35rem; }
+  .modal-info .price { font-size: 1.2rem; }
+  .modal-info p.desc { color: #666; font-size: .88rem; margin: 2px 0 4px; }
+
+  /* ---------- MATERIAL / FINISHING SECTIONS ---------- */
+  .variety-section { margin-top: 16px; }
+  .variety-section + .variety-section { margin-top: 20px; }
+  .variety-section h4 {
+    margin: 0 0 10px; font-size: .7rem; text-transform: uppercase;
+    letter-spacing: .1em; color: #a89880; font-weight: 700;
+  }
+  .variety-list { display: flex; flex-direction: column; gap: 8px; }
+  .variety-item {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 8px; border: 1px solid #efeae3; border-radius: 12px;
+    background: #fdfcfa; cursor: zoom-in; font-family: inherit; text-align: left;
+    transition: .15s;
+  }
+  .variety-item:hover { border-color: #d6cbba; background: #fff; }
+  .v-thumb {
+    width: 58px; height: 58px; flex: 0 0 58px;
+    border-radius: 9px; overflow: hidden; background: #f2eee9;
+  }
+  .v-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .v-text { min-width: 0; }
+  .v-name { font-size: .87rem; font-weight: 600; margin-bottom: 1px; }
+  .v-desc { font-size: .77rem; color: #7a7a7a; line-height: 1.35; }
+
+  /* ---------- ACTIONS ---------- */
+  .modal-actions { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
+  .wa-btn {
+    display: inline-block; text-align: center; text-decoration: none;
+    background: #25d366; color: #fff; padding: 13px; border-radius: 10px;
+    font-weight: 600; font-size: .92rem;
+  }
+  .close-btn {
+    background: none; border: 1px solid #ddd; border-radius: 10px;
+    padding: 11px; cursor: pointer; font-family: inherit; font-size: .88rem; color: #555;
+  }
+
+  /* ---------- LIGHTBOX ---------- */
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(20,18,15,.88);
+    display: none; align-items: center; justify-content: center; padding: 20px; z-index: 70;
+  }
+  .lightbox.open { display: flex; }
+  .lb-box {
+    background: #fff; border-radius: 16px; overflow: hidden;
+    max-width: 480px; width: 100%; max-height: 90vh;
+    display: flex; flex-direction: column;
+  }
+  .lb-img { background: #f2eee9; width: 100%; aspect-ratio: 1 / 1; max-height: 52vh; }
+  .lb-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lb-info { padding: 18px 20px 20px; overflow-y: auto; }
+  .lb-info h3 { margin: 0 0 6px; font-size: 1.05rem; }
+  .lb-info p { margin: 0 0 14px; font-size: .85rem; color: #666; line-height: 1.45; }
+  .lb-close {
+    width: 100%; background: none; border: 1px solid #ddd; border-radius: 10px;
+    padding: 11px; cursor: pointer; font-family: inherit; font-size: .88rem; color: #555;
+  }
+
+  footer { text-align: center; padding: 24px; font-size: .8rem; color: #9a9a9a; }
+
+  @media (max-width: 700px) {
+    .modal-box { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .card-body { padding: 10px 10px 13px; }
+    .modal-info { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1 class="brand">My Catalog <span>Furniture &amp; Home</span></h1>
+    <input class="search" id="search" type="search" placeholder="Search products…">
+  </div>
+</header>
+
+<div class="filters" id="filters"></div>
+<div class="count" id="count"></div>
+<main class="grid" id="grid"></main>
+<p class="empty" id="empty">No products found.</p>
+
+<!-- PRODUCT POP-UP -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-img"><img id="mImg" alt=""></div>
+    <div class="modal-info">
+      <span class="cat-tag" id="mCat"></span>
+      <h2 id="mName"></h2>
+      <div class="price" id="mPrice"></div>
+      <p class="desc" id="mDesc"></p>
+
+      <!-- Material / Finishing sections are injected here -->
+      <div id="mVariety"></div>
+
+      <div class="modal-actions">
+        <a class="wa-btn" id="mWa" target="_blank" rel="noopener">Enquire on WhatsApp</a>
+        <button class="close-btn" id="closeBtn">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REFERENCE PHOTO LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <div class="lb-box">
+    <div class="lb-img"><img id="lbImg" alt=""></div>
+    <div class="lb-info">
+      <h3 id="lbName"></h3>
+      <p id="lbDesc"></p>
+      <button class="lb-close" id="lbClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<footer>© <span id="year"></span> My Catalog — all prices subject to change.</footer>
+
+<script>
+/* =========================================================================
+   1) YOUR WHATSAPP NUMBER — country code, no +, no spaces, no dashes
+   ========================================================================= */
+const WHATSAPP_NUMBER = "60123456789";
+
+/* =========================================================================
+   2) MATERIAL VARIETY  (shown on every product by default)
+   `id` = Google Drive FILE ID of the reference photo
+   ========================================================================= */
+const materials = [
+  {
+    name: "Rubberwood",
+    id:   "PASTE_FILE_ID_HERE",
+    desc: "Dense, durable hardwood with a smooth, even grain. Our most common solid wood option."
+  },
+  {
+    name: "Pinewood",
+    id:   "PASTE_FILE_ID_HERE",
+    desc: "Lightweight softwood with a warm, visible grain. Budget-friendly and easy to finish."
+  },
+  {
+    name: "Plywood",
+    id:   "PASTE_FILE_ID_HERE",
+    desc: "Engineered panel with a stable, flat surface. Well suited to painted finishes."
+  },
+  {
+    name: "MDF Board",
+    id:   "PASTE_FILE_ID_HERE",
+    desc: "Smooth, uniform board with no grain — ideal for spray-painted colours."
+  }
+];
+
+/* =========================================================================
+   3) FINISHING VARIETY
+   ========================================================================= */
+const finishes = [
+  {
+    name: "Clear Coating",
+    id:   "PASTE_FILE_ID_HERE",
+    desc: "Transparent lacquer that protects the surface while keeping the natural colour and grain visible."
+  },
+  {
+    name: "Stain Colour",
+    id:   "PASTE_FILE_ID_HERE",
+    desc: "Semi-transparent stain in walnut, oak, teak or custom tones. Grain still shows through."
+  },
+  {
+    name: "Paint Spray",
+    id:   "PASTE_FILE_ID_HERE",
+    desc: "Opaque spray finish in any solid colour. Fully covers the grain for a uniform look."
+  }
+];
+
+/* =========================================================================
+   4) CATEGORY HELPER — lets a product belong to one or many categories.
+   Use `categories: ["A", "B"]` for multiple, or the old `category: "A"`.
+   Both styles can be mixed freely.
+   ========================================================================= */
+const catsOf = p => p.categories || (p.category ? [p.category] : []);
+
+/* =========================================================================
+   5) YOUR PRODUCTS
+   To add a product: copy one { ... } block, paste it before the last ],
+   and change the values. `id` = the Google Drive FILE ID.
+   (Open the image in Drive → link looks like /file/d/THIS_PART/view)
+
+   CATEGORIES — pick one style per product:
+     category:   "Shelves",                     // single category
+     categories: ["Shelves", "Storage"],        // multiple categories
+
+   OPTIONAL — restrict which varieties show on a product:
+     materials: ["Rubberwood", "Pinewood"],
+     finishes:  ["Clear Coating"]
+   Leave them out and ALL materials / finishes will be shown.
+   ========================================================================= */
+const products = [
+  {
+    id:   "1PM5zVpAsGS3hH35c6JcL_rl2SDZ0JY-A",
+    name: "Wall Shelf 60cm",
+    categories: ["Shelves", "Storage"],
+    price: "RM 120",
+    desc: "Solid oak wall shelf, 60cm. Comes with mounting brackets.",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
+  },
+  {
+    id:   "PASTE_FILE_ID_HERE",
+    name: "Round Side Table",
+    category: "Side Tables",
+    price: "RM 180",
+    desc: "Compact round side table in matte walnut finish."
+  },
+  {
+    id:   "PASTE_FILE_ID_HERE",
+    name: "Dining Table — 4 Seater",
+    category: "Tables",
+    price: "RM 650",
+    desc: "Solid rubberwood dining table, 120 × 75cm."
+  },
+  {
+    id:   "PASTE_FILE_ID_HERE",
+    name: "Floating Shelf Set",
+    category: "Shelves",
+    price: "RM 95",
+    desc: "Set of 3 floating shelves, white finish."
+  },
+  {
+    id:   "PASTE_FILE_ID_HERE",
+    name: "Minimal Hanging Frame",
+    category: "Hanging Frames",
+    price: "RM 45",
+    desc: "A4 hanging frame with cotton cord."
+  },
+  {
+    id:   "PASTE_FILE_ID_HERE",
+    name: "Bedside Table",
+    categories: ["Side Tables", "Storage"],
+    price: "RM 150",
+    desc: "Two-drawer bedside table with soft-close runners."
+  }
+];
+/* ======================= STOP EDITING HERE =============================== */
+
+
+/* ---------- Image URL helpers (handles Google Drive quirks) ---------- */
+const thumbUrl = (id, size) => `https://drive.google.com/thumbnail?id=${id}&sz=w${size}`;
+
+const PLACEHOLDER =
+  "data:image/svg+xml;utf8," + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500">
+       <rect width="400" height="500" fill="#f2eee9"/>
+       <text x="50%" y="50%" font-family="sans-serif" font-size="15"
+             fill="#b0a698" text-anchor="middle">Image unavailable</text>
+     </svg>`);
+
+/* Try thumbnail URL, then lh3 URL, then placeholder */
+window.imgFallback = function (img) {
+  const id = img.dataset.id;
+  if (!img.dataset.tried) {
+    img.dataset.tried = "1";
+    img.src = `https://lh3.googleusercontent.com/d/${id}`;
+  } else {
+    img.onerror = null;
+    img.src = PLACEHOLDER;
+  }
+};
+
+/* ---------- State ---------- */
+let activeCategory = "All";
+let searchTerm = "";
+
+const gridEl    = document.getElementById("grid");
+const filtersEl = document.getElementById("filters");
+const countEl   = document.getElementById("count");
+const emptyEl   = document.getElementById("empty");
+const searchEl  = document.getElementById("search");
+const modal     = document.getElementById("modal");
+const lightbox  = document.getElementById("lightbox");
+
+/* ---------- Build category chips automatically ----------
+   Collects every category from every product (supports multi-category)
+   and de-duplicates them. Order = first appearance. */
+function buildFilters() {
+  const cats = ["All", ...new Set(products.flatMap(catsOf))];
+  filtersEl.innerHTML = cats.map(c =>
+    `<button class="chip${c === activeCategory ? " active" : ""}" data-cat="${c}">${c}</button>`
+  ).join("");
+}
+
+/* ---------- Render products ---------- */
+function render() {
+  const q = searchTerm.toLowerCase();
+  const list = products.filter(p => {
+    const matchCat = activeCategory === "All" || catsOf(p).includes(activeCategory);
+    const matchQ = !q ||
+      p.name.toLowerCase().includes(q) ||
+      catsOf(p).join(" ").toLowerCase().includes(q) ||
+      (p.desc || "").toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
+
+  gridEl.innerHTML = list.map(p => `
+    <article class="card" data-id="${p.id}">
+      <div class="thumb">
+        <img loading="lazy" data-id="${p.id}" src="${thumbUrl(p.id, 700)}"
+             onerror="imgFallback(this)" alt="${p.name}">
+      </div>
+      <div class="card-body">
+        <div class="cat-tag">${catsOf(p).join(" · ")}</div>
+        <h3>${p.name}</h3>
+        <div class="price">${p.price || ""}</div>
+      </div>
+    </article>
+  `).join("");
+
+  countEl.textContent = `${list.length} product${list.length === 1 ? "" : "s"}`;
+  emptyEl.style.display = list.length ? "none" : "block";
+}
+
+/* ---------- Build one variety block ---------- */
+function varietyHTML(title, type, items) {
+  if (!items.length) return "";
+  return `
+    <div class="variety-section">
+      <h4>${title}</h4>
+      <div class="variety-list">
+        ${items.map(m => `
+          <button class="variety-item" data-type="${type}" data-name="${m.name}">
+            <div class="v-thumb">
+              <img loading="lazy" data-id="${m.id}" src="${thumbUrl(m.id, 200)}"
+                   onerror="imgFallback(this)" alt="${m.name}">
+            </div>
+            <div class="v-text">
+              <div class="v-name">${m.name}</div>
+              <div class="v-desc">${m.desc || ""}</div>
+            </div>
+          </button>
+        `).join("")}
+      </div>
+    </div>`;
+}
+
+/* Show only the varieties a product lists (or all if it lists none) */
+function pickVariety(all, names) {
+  if (!names || !names.length) return all;
+  return all.filter(x => names.includes(x.name));
+}
+
+/* ---------- Product modal ---------- */
+function openModal(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+
+  const img = document.getElementById("mImg");
+  img.dataset.tried = "";
+  img.dataset.id = p.id;
+  img.onerror = function () { imgFallback(this); };
+  img.src = thumbUrl(p.id, 1600);
+  img.alt = p.name;
+
+  document.getElementById("mCat").textContent   = catsOf(p).join(" · ");
+  document.getElementById("mName").textContent  = p.name;
+  document.getElementById("mPrice").textContent = p.price || "";
+  document.getElementById("mDesc").textContent  = p.desc || "";
+
+  document.getElementById("mVariety").innerHTML =
+    varietyHTML("Material Options", "material", pickVariety(materials, p.materials)) +
+    varietyHTML("Finishing Options", "finish",  pickVariety(finishes,  p.finishes));
+
+  document.getElementById("mWa").href =
+    `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi, I'm interested in: " + p.name)}`;
+
+  document.querySelector(".modal-box").scrollTop = 0;
+  modal.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal() {
+  modal.classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+/* ---------- Reference photo lightbox ---------- */
+function openLightbox(type, name) {
+  const source = type === "material" ? materials : finishes;
+  const item = source.find(x => x.name === name);
+  if (!item) return;
+
+  const img = document.getElementById("lbImg");
+  img.dataset.tried = "";
+  img.dataset.id = item.id;
+  img.onerror = function () { imgFallback(this); };
+  img.src = thumbUrl(item.id, 1200);
+  img.alt = item.name;
+
+  document.getElementById("lbName").textContent = item.name;
+  document.getElementById("lbDesc").textContent = item.desc || "";
+
+  lightbox.classList.add("open");
+}
+
+function closeLightbox() {
+  lightbox.classList.remove("open");
+}
+
+/* ---------- Events ---------- */
+filtersEl.addEventListener("click", e => {
+  const btn = e.target.closest(".chip");
+  if (!btn) return;
+  activeCategory = btn.dataset.cat;
+  buildFilters();
+  render();
+});
+
+searchEl.addEventListener("input", e => {
+  searchTerm = e.target.value.trim();
+  render();
+});
+
+gridEl.addEventListener("click", e => {
+  const card = e.target.closest(".card");
+  if (card) openModal(card.dataset.id);
+});
+
+/* Click a material / finish row → enlarge its reference photo */
+document.getElementById("mVariety").addEventListener("click", e => {
+  const item = e.target.closest(".variety-item");
+  if (item) openLightbox(item.dataset.type, item.dataset.name);
+});
+
+document.getElementById("closeBtn").addEventListener("click", closeModal);
+document.getElementById("lbClose").addEventListener("click", closeLightbox);
+
+modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+lightbox.addEventListener("click", e => { if (e.target === lightbox) closeLightbox(); });
+
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (lightbox.classList.contains("open")) closeLightbox();
+  else if (modal.classList.contains("open")) closeModal();
+});
+
+/* ---------- Init ---------- */
+document.getElementById("year").textContent = new Date().getFullYear();
+buildFilters();
+render();
+</script>
+</body>
+</html>
