@@ -58,8 +58,17 @@
   .card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.08); }
 
   /* === 4:5 PORTRAIT IMAGE FRAME === */
-  .thumb { aspect-ratio: 4 / 5; background: #f2eee9; overflow: hidden; }
+  .thumb { position: relative; aspect-ratio: 4 / 5; background: #f2eee9; overflow: hidden; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* photo-count badge on cards */
+  .img-count {
+    position: absolute; right: 8px; bottom: 8px;
+    background: rgba(20,18,15,.72); color: #fff;
+    font-size: .66rem; letter-spacing: .02em;
+    padding: 3px 9px; border-radius: 999px;
+    pointer-events: none;
+  }
 
   .card-body { padding: 13px 14px 16px; }
   .cat-tag {
@@ -84,13 +93,32 @@
   }
 
   /* === 4:5 PORTRAIT IN POP-UP TOO === */
-  .modal-img { background: #f2eee9; aspect-ratio: 4 / 5; overflow: hidden; }
+  .modal-media { background: #f2eee9; display: flex; flex-direction: column; }
+  .modal-img { aspect-ratio: 4 / 5; overflow: hidden; }
   .modal-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
   .modal-info { padding: 26px 26px 24px; display: flex; flex-direction: column; gap: 8px; }
   .modal-info h2 { margin: 0; font-size: 1.35rem; }
   .modal-info .price { font-size: 1.2rem; }
   .modal-info p.desc { color: #666; font-size: .88rem; margin: 2px 0 4px; }
+
+  /* ---------- GALLERY THUMBNAIL STRIPS ---------- */
+  .m-thumbs, .lb-thumbs {
+    display: flex; gap: 8px; padding: 10px;
+    overflow-x: auto; background: #f2eee9;
+    border-top: 1px solid #e6e0d8;
+    scrollbar-width: thin;
+  }
+  .m-thumbs:empty, .lb-thumbs:empty { display: none; }
+  .gal-thumb {
+    flex: 0 0 auto; width: 54px; height: 66px; padding: 0;
+    border: 2px solid transparent; border-radius: 8px; overflow: hidden;
+    background: #fff; cursor: pointer; opacity: .62; transition: .15s;
+    font-family: inherit;
+  }
+  .gal-thumb:hover { opacity: 1; }
+  .gal-thumb.active { border-color: #1b1b1b; opacity: 1; }
+  .gal-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
   /* ---------- MATERIAL / FINISHING SECTIONS ---------- */
   .variety-section { margin-top: 16px; }
@@ -108,10 +136,12 @@
   }
   .variety-item:hover { border-color: #d6cbba; background: #fff; }
   .v-thumb {
+    position: relative;
     width: 58px; height: 58px; flex: 0 0 58px;
     border-radius: 9px; overflow: hidden; background: #f2eee9;
   }
   .v-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .v-thumb .img-count { right: 3px; bottom: 3px; font-size: .55rem; padding: 1px 5px; }
   .v-text { min-width: 0; }
   .v-name { font-size: .87rem; font-weight: 600; margin-bottom: 1px; }
   .v-desc { font-size: .77rem; color: #7a7a7a; line-height: 1.35; }
@@ -139,7 +169,7 @@
     max-width: 480px; width: 100%; max-height: 90vh;
     display: flex; flex-direction: column;
   }
-  .lb-img { background: #f2eee9; width: 100%; aspect-ratio: 1 / 1; max-height: 52vh; }
+  .lb-img { background: #f2eee9; width: 100%; aspect-ratio: 1 / 1; max-height: 46vh; }
   .lb-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .lb-info { padding: 18px 20px 20px; overflow-y: auto; }
   .lb-info h3 { margin: 0 0 6px; font-size: 1.05rem; }
@@ -156,6 +186,7 @@
     .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
     .card-body { padding: 10px 10px 13px; }
     .modal-info { padding: 20px; }
+    .gal-thumb { width: 46px; height: 56px; }
   }
 </style>
 </head>
@@ -176,7 +207,10 @@
 <!-- PRODUCT POP-UP -->
 <div class="modal" id="modal">
   <div class="modal-box">
-    <div class="modal-img"><img id="mImg" alt=""></div>
+    <div class="modal-media">
+      <div class="modal-img"><img id="mImg" alt=""></div>
+      <div class="m-thumbs" id="mThumbs"></div>
+    </div>
     <div class="modal-info">
       <span class="cat-tag" id="mCat"></span>
       <h2 id="mName"></h2>
@@ -198,6 +232,7 @@
 <div class="lightbox" id="lightbox">
   <div class="lb-box">
     <div class="lb-img"><img id="lbImg" alt=""></div>
+    <div class="lb-thumbs" id="lbThumbs"></div>
     <div class="lb-info">
       <h3 id="lbName"></h3>
       <p id="lbDesc"></p>
@@ -216,27 +251,33 @@ const WHATSAPP_NUMBER = "60123456789";
 
 /* =========================================================================
    2) MATERIAL VARIETY  (shown on every product by default)
-   `id` = Google Drive FILE ID of the reference photo
+   `ids` = array of Google Drive FILE IDs (first one = cover photo)
+   `id`  = single-file shorthand still works
    ========================================================================= */
 const materials = [
   {
     name: "Rubberwood",
-    id:   "PASTE_FILE_ID_HERE",
+    ids:  ["1kFZQtqdZWIpsEXZMw19eycDl-pgShhPK"],
     desc: "Dense, durable hardwood with a smooth, even grain. Our most common solid wood option."
   },
   {
     name: "Pinewood",
-    id:   "PASTE_FILE_ID_HERE",
+    ids:  ["10nCD2xnJJI8fKPKNJ99N7_qaLCJJVjCZ"],
     desc: "Lightweight softwood with a warm, visible grain. Budget-friendly and easy to finish."
   },
   {
     name: "Plywood",
-    id:   "PASTE_FILE_ID_HERE",
+    ids:  ["PASTE_FILE_ID_HERE", "PASTE_FILE_ID_HERE"],
     desc: "Engineered panel with a stable, flat surface. Well suited to painted finishes."
   },
   {
+    name: "Blockboard",
+    ids:  ["PASTE_FILE_ID_HERE", "PASTE_FILE_ID_HERE"],
+    desc: "Engineered wood panel with a solid wood core, offering good strength and stability for furniture, cabinets and shelving."
+  },
+  {
     name: "MDF Board",
-    id:   "PASTE_FILE_ID_HERE",
+    ids:  ["PASTE_FILE_ID_HERE", "PASTE_FILE_ID_HERE"],
     desc: "Smooth, uniform board with no grain — ideal for spray-painted colours."
   }
 ];
@@ -247,18 +288,23 @@ const materials = [
 const finishes = [
   {
     name: "Clear Coating",
-    id:   "PASTE_FILE_ID_HERE",
+    ids:  ["1OmsCu-Z1WIBvOYJSJdw1nptLNH6bS7Ix"],
     desc: "Transparent lacquer that protects the surface while keeping the natural colour and grain visible."
   },
   {
     name: "Stain Colour",
-    id:   "PASTE_FILE_ID_HERE",
+    ids:  ["1IcHFRx1D3wdBII1gNdzBTjBCKcpjFZrD"],
     desc: "Semi-transparent stain in walnut, oak, teak or custom tones. Grain still shows through."
   },
   {
     name: "Paint Spray",
-    id:   "PASTE_FILE_ID_HERE",
+    ids:  ["PASTE_FILE_ID_HERE", "PASTE_FILE_ID_HERE"],
     desc: "Opaque spray finish in any solid colour. Fully covers the grain for a uniform look."
+  },
+  {
+    name: "Laminate",
+    ids:  ["PASTE_FILE_ID_HERE", "PASTE_FILE_ID_HERE"],
+    desc: "Decorative laminate finish available in various colours, patterns and woodgrain designs. Durable, scratch-resistant and easy to maintain."
   }
 ];
 
@@ -270,10 +316,21 @@ const finishes = [
 const catsOf = p => p.categories || (p.category ? [p.category] : []);
 
 /* =========================================================================
-   5) YOUR PRODUCTS
+   5) IMAGE-ID HELPER — every item may hold ONE id or MANY ids.
+   `ids: ["ID1","ID2","ID3"]`  →  gallery
+   `id:  "ID1"`                →  single photo (still works)
+   ========================================================================= */
+const idsOf = x => {
+  if (Array.isArray(x.ids)) return x.ids.filter(Boolean);
+  return x.id ? [x.id] : [];
+};
+
+/* =========================================================================
+   6) YOUR PRODUCTS
    To add a product: copy one { ... } block, paste it before the last ],
-   and change the values. `id` = the Google Drive FILE ID.
+   and change the values. Each entry in `ids` = one Google Drive FILE ID.
    (Open the image in Drive → link looks like /file/d/THIS_PART/view)
+   The FIRST id is used as the cover / card thumbnail.
 
    CATEGORIES — pick one style per product:
      category:   "Shelves",                     // single category
@@ -285,49 +342,129 @@ const catsOf = p => p.categories || (p.category ? [p.category] : []);
    Leave them out and ALL materials / finishes will be shown.
    ========================================================================= */
 const products = [
-  {
-    id:   "1PM5zVpAsGS3hH35c6JcL_rl2SDZ0JY-A",
-    name: "Wall Shelf 60cm",
-    categories: ["Shelves", "Storage"],
-    price: "RM 120",
-    desc: "Solid oak wall shelf, 60cm. Comes with mounting brackets.",
+  {//0000
+    ids: [
+      "1nVIsMmyO8lTM4A06OvHLrJFoJIWVG_f4",
+      "1PM5zVpAsGS3hH35c6JcL_rl2SDZ0JY-A",
+      "19vEtqkFo7MjyyqztXsBEOUtBt7HPOt33",
+      "1QqxZlmPnYDy9fcttLy8N66HbpqxX5DaE"
+    ],                     
+    name: "Design Your Furniture Through Whatsapp",
+    categories: ["Custom"],
+    price: "Free",
+    desc: "Request custom. Imagination, budget and my skill are the limit.",
+    materials: ["Rubberwood", "Pinewood", "Plywood", "Blockboard", "MDF Board"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray", "Laminate"]
+  },
+  {//0001
+    ids: [
+      "1PM5zVpAsGS3hH35c6JcL_rl2SDZ0JY-A"
+    ],
+    name: "Minimalist Wall Frame [0001]",
+    categories: ["Wall Frame", "Wall-Mounted"],
+    price: "",
+    desc: "",
     materials: ["Rubberwood", "Pinewood"],
     finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
   },
-  {
-    id:   "PASTE_FILE_ID_HERE",
-    name: "Round Side Table",
-    category: "Side Tables",
-    price: "RM 180",
-    desc: "Compact round side table in matte walnut finish."
+  {//0002
+    ids: [
+      "19vEtqkFo7MjyyqztXsBEOUtBt7HPOt33",
+    ],
+    name: "Multi-Level, Adjustable Shelf & Rack [0002]",
+    categories: ["Shelves & Rack"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
   },
-  {
-    id:   "PASTE_FILE_ID_HERE",
-    name: "Dining Table — 4 Seater",
-    category: "Tables",
-    price: "RM 650",
-    desc: "Solid rubberwood dining table, 120 × 75cm."
+  {//0003
+    ids: [
+      "1QqxZlmPnYDy9fcttLy8N66HbpqxX5DaE"
+    ],
+    name: "Key Holder Shelf [0003]",
+    categories: ["Wall-Mounted", "Shelves & Rack Organizer", "Key Holder"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
   },
-  {
-    id:   "PASTE_FILE_ID_HERE",
-    name: "Floating Shelf Set",
-    category: "Shelves",
-    price: "RM 95",
-    desc: "Set of 3 floating shelves, white finish."
+  {//0004
+    ids: [
+      "15feIBVjK1qMwHDb22h6f_Y4hwn-aVeNl"
+    ],
+    name: "Helmet Shelves & Hook [0004]",
+    categories: ["Wall-Mounted", "Shelves & Rack Organizer", "Biker"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
   },
-  {
-    id:   "PASTE_FILE_ID_HERE",
-    name: "Minimal Hanging Frame",
-    category: "Hanging Frames",
-    price: "RM 45",
-    desc: "A4 hanging frame with cotton cord."
+  {//0006
+    ids: [
+      "1SjhmWI-XNjuwumU81ohiLSJbQGVd72Ys"
+    ],
+    name: "Side Table with 2 Drawer [0006]",
+    categories: ["Side Table"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
   },
-  {
-    id:   "PASTE_FILE_ID_HERE",
-    name: "Bedside Table",
-    categories: ["Side Tables", "Storage"],
-    price: "RM 150",
-    desc: "Two-drawer bedside table with soft-close runners."
+  {//0007
+    ids: [
+      "18PQc8JPPm0km96fS3GdQejkjYmSJE19I"
+    ],
+    name: "Serama Chicken Portable Nesting Box [0007]",
+    categories: ["Pet & Animal"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
+  },
+  {//0008
+    ids: [
+      "13HoVvydyAMGVsjHVSG-nM3FenBPKDDM6"
+    ],
+    name: "Multi-Level, Adjustable Shelf & Rack + 2 Drawer [0008]",
+    categories: ["Shelves & Rack Organizer"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
+  },
+  {//0009
+    ids: [
+      "1hupmgV89WK1aqdK8qoq7w0lom7NzV55g"
+    ],
+    name: "Shoes Rack + 1 Drawer [0009]",
+    categories: ["Shoes Rack"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
+  },
+  {//0010
+    ids: [
+      "1lWrwBVhhhbeAMdfvDWRSBUOh2QUbQMOt"
+    ],
+    name: "Stand Table + Steel Leg[0010]",
+    categories: ["Table"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
+  },
+  {//0011
+    ids: [
+      "1hRQKLJXZGOvCtHJImBwhcfxSgN_TQuuR"
+    ],
+    name: "Shelf Organizer & Storage with 3 Drawer [0011]",
+    categories: ["Storage Cabinet", "Shelves & Rack Organizer"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
   }
 ];
 /* ======================= STOP EDITING HERE =============================== */
@@ -347,6 +484,7 @@ const PLACEHOLDER =
 /* Try thumbnail URL, then lh3 URL, then placeholder */
 window.imgFallback = function (img) {
   const id = img.dataset.id;
+  if (!id) { img.onerror = null; img.src = PLACEHOLDER; return; }
   if (!img.dataset.tried) {
     img.dataset.tried = "1";
     img.src = `https://lh3.googleusercontent.com/d/${id}`;
@@ -356,9 +494,40 @@ window.imgFallback = function (img) {
   }
 };
 
+/* Point an <img> at a given file id (or the placeholder when there is none) */
+function setImgSrc(el, id, size) {
+  el.onerror = null;
+  el.dataset.tried = "";
+  el.dataset.id = id || "";
+  if (!id) { el.src = PLACEHOLDER; return; }
+  el.onerror = function () { imgFallback(this); };
+  el.src = thumbUrl(id, size);
+}
+
+/* Small "<img>" tag for a grid / variety thumbnail */
+function thumbTag(id, size) {
+  if (!id) return `<img src="${PLACEHOLDER}" alt="">`;
+  return `<img loading="lazy" data-id="${id}" src="${thumbUrl(id, size)}"
+               onerror="imgFallback(this)" alt="">`;
+}
+
+/* Thumbnail strip markup (empty string when there is only one photo) */
+function galleryHTML(ids, activeIndex) {
+  if (ids.length < 2) return "";
+  return ids.map((id, i) => `
+    <button class="gal-thumb${i === activeIndex ? " active" : ""}"
+            data-i="${i}" aria-label="Photo ${i + 1} of ${ids.length}">
+      ${thumbTag(id, 200)}
+    </button>
+  `).join("");
+}
+
 /* ---------- State ---------- */
 let activeCategory = "All";
 let searchTerm = "";
+
+let modalIds = [];
+let lbIds = [];
 
 const gridEl    = document.getElementById("grid");
 const filtersEl = document.getElementById("filters");
@@ -367,6 +536,11 @@ const emptyEl   = document.getElementById("empty");
 const searchEl  = document.getElementById("search");
 const modal     = document.getElementById("modal");
 const lightbox  = document.getElementById("lightbox");
+
+const mImg      = document.getElementById("mImg");
+const mThumbs   = document.getElementById("mThumbs");
+const lbImg     = document.getElementById("lbImg");
+const lbThumbs  = document.getElementById("lbThumbs");
 
 /* ---------- Build category chips automatically ----------
    Collects every category from every product (supports multi-category)
@@ -390,19 +564,27 @@ function render() {
     return matchCat && matchQ;
   });
 
-  gridEl.innerHTML = list.map(p => `
-    <article class="card" data-id="${p.id}">
-      <div class="thumb">
-        <img loading="lazy" data-id="${p.id}" src="${thumbUrl(p.id, 700)}"
-             onerror="imgFallback(this)" alt="${p.name}">
-      </div>
-      <div class="card-body">
-        <div class="cat-tag">${catsOf(p).join(" · ")}</div>
-        <h3>${p.name}</h3>
-        <div class="price">${p.price || ""}</div>
-      </div>
-    </article>
-  `).join("");
+  gridEl.innerHTML = list.map(p => {
+    const ids   = idsOf(p);
+    const cover = ids[0] || "";
+    const badge = ids.length > 1
+      ? `<span class="img-count">1 / ${ids.length}</span>`
+      : "";
+
+    return `
+      <article class="card" data-key="${products.indexOf(p)}">
+        <div class="thumb">
+          ${thumbTag(cover, 700)}
+          ${badge}
+        </div>
+        <div class="card-body">
+          <div class="cat-tag">${catsOf(p).join(" · ")}</div>
+          <h3>${p.name}</h3>
+          <div class="price">${p.price || ""}</div>
+        </div>
+      </article>
+    `;
+  }).join("");
 
   countEl.textContent = `${list.length} product${list.length === 1 ? "" : "s"}`;
   emptyEl.style.display = list.length ? "none" : "block";
@@ -415,18 +597,23 @@ function varietyHTML(title, type, items) {
     <div class="variety-section">
       <h4>${title}</h4>
       <div class="variety-list">
-        ${items.map(m => `
+        ${items.map(m => {
+          const ids = idsOf(m);
+          const badge = ids.length > 1
+            ? `<span class="img-count">${ids.length}</span>`
+            : "";
+          return `
           <button class="variety-item" data-type="${type}" data-name="${m.name}">
             <div class="v-thumb">
-              <img loading="lazy" data-id="${m.id}" src="${thumbUrl(m.id, 200)}"
-                   onerror="imgFallback(this)" alt="${m.name}">
+              ${thumbTag(ids[0] || "", 200)}
+              ${badge}
             </div>
             <div class="v-text">
               <div class="v-name">${m.name}</div>
               <div class="v-desc">${m.desc || ""}</div>
             </div>
-          </button>
-        `).join("")}
+          </button>`;
+        }).join("")}
       </div>
     </div>`;
 }
@@ -438,16 +625,16 @@ function pickVariety(all, names) {
 }
 
 /* ---------- Product modal ---------- */
-function openModal(id) {
-  const p = products.find(x => x.id === id);
+function openModal(key) {
+  const p = products[key];
   if (!p) return;
 
-  const img = document.getElementById("mImg");
-  img.dataset.tried = "";
-  img.dataset.id = p.id;
-  img.onerror = function () { imgFallback(this); };
-  img.src = thumbUrl(p.id, 1600);
-  img.alt = p.name;
+  modalIds = idsOf(p);
+
+  setImgSrc(mImg, modalIds[0] || "", 1600);
+  mImg.alt = p.name;
+  mThumbs.innerHTML = galleryHTML(modalIds, 0);
+  mThumbs.scrollLeft = 0;
 
   document.getElementById("mCat").textContent   = catsOf(p).join(" · ");
   document.getElementById("mName").textContent  = p.name;
@@ -477,12 +664,12 @@ function openLightbox(type, name) {
   const item = source.find(x => x.name === name);
   if (!item) return;
 
-  const img = document.getElementById("lbImg");
-  img.dataset.tried = "";
-  img.dataset.id = item.id;
-  img.onerror = function () { imgFallback(this); };
-  img.src = thumbUrl(item.id, 1200);
-  img.alt = item.name;
+  lbIds = idsOf(item);
+
+  setImgSrc(lbImg, lbIds[0] || "", 1200);
+  lbImg.alt = item.name;
+  lbThumbs.innerHTML = galleryHTML(lbIds, 0);
+  lbThumbs.scrollLeft = 0;
 
   document.getElementById("lbName").textContent = item.name;
   document.getElementById("lbDesc").textContent = item.desc || "";
@@ -510,13 +697,31 @@ searchEl.addEventListener("input", e => {
 
 gridEl.addEventListener("click", e => {
   const card = e.target.closest(".card");
-  if (card) openModal(card.dataset.id);
+  if (card) openModal(card.dataset.key);
 });
 
-/* Click a material / finish row → enlarge its reference photo */
+/* Click a material / finish row → enlarge its reference photos */
 document.getElementById("mVariety").addEventListener("click", e => {
   const item = e.target.closest(".variety-item");
   if (item) openLightbox(item.dataset.type, item.dataset.name);
+});
+
+/* Click a thumbnail in the product gallery → swap the big photo */
+mThumbs.addEventListener("click", e => {
+  const btn = e.target.closest(".gal-thumb");
+  if (!btn) return;
+  const i = Number(btn.dataset.i);
+  setImgSrc(mImg, modalIds[i], 1600);
+  [...mThumbs.children].forEach((c, j) => c.classList.toggle("active", j === i));
+});
+
+/* Click a thumbnail in the lightbox gallery → swap the big photo */
+lbThumbs.addEventListener("click", e => {
+  const btn = e.target.closest(".gal-thumb");
+  if (!btn) return;
+  const i = Number(btn.dataset.i);
+  setImgSrc(lbImg, lbIds[i], 1200);
+  [...lbThumbs.children].forEach((c, j) => c.classList.toggle("active", j === i));
 });
 
 document.getElementById("closeBtn").addEventListener("click", closeModal);
