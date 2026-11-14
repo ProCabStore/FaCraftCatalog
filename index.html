@@ -13,15 +13,15 @@
     background: #faf9f7;
     line-height: 1.5;
   }
-  /* ---------- HEADER ---------- */
+  /* ---------- HEADER (sticky: brand + search + filter bar) ---------- */
   header {
-    position: sticky; top: 0; z-index: 20;
-    background: rgba(255,255,255,.93);
+    position: sticky; top: 0; z-index: 30;
+    background: rgba(255,255,255,.95);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid #e9e5df;
   }
   .header-inner {
-    max-width: 1200px; margin: 0 auto; padding: 14px 20px;
+    max-width: 1200px; margin: 0 auto; padding: 14px 20px 12px;
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   }
   .brand { font-size: 1.1rem; font-weight: 700; letter-spacing: .02em; margin: 0; }
@@ -32,20 +32,113 @@
     font-size: .9rem; outline: none; background: #fff;
   }
   .search:focus { border-color: #8a7a63; }
-  /* ---------- FILTERS ---------- */
-  .filters {
-    max-width: 1200px; margin: 0 auto; padding: 16px 20px 4px;
-    display: flex; gap: 8px; flex-wrap: wrap;
+
+  /* ---------- FILTER BAR ---------- */
+  .filterbar { position: relative; border-top: 1px solid #f1ede7; }
+  .filterbar-inner {
+    max-width: 1200px; margin: 0 auto; padding: 9px 20px;
+    display: flex; align-items: center; gap: 8px;
   }
+
+  /* horizontally scrolling chip rail */
+  .chips {
+    flex: 1 1 auto; min-width: 0;
+    display: flex; gap: 8px;
+    overflow-x: auto; overflow-y: hidden;
+    scroll-behavior: smooth;
+    scrollbar-width: none; -ms-overflow-style: none;
+    padding: 2px 0;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+
   .chip {
+    flex: 0 0 auto; white-space: nowrap;
     padding: 8px 16px; border-radius: 999px; border: 1px solid #ddd7cf;
     background: #fff; font-size: .85rem; cursor: pointer; color: #4a4a4a;
     transition: .15s; font-family: inherit;
   }
   .chip:hover { border-color: #8a7a63; color: #1b1b1b; }
   .chip.active { background: #1b1b1b; border-color: #1b1b1b; color: #fff; }
-  /* ---------- GRID ---------- */
-  .count { max-width: 1200px; margin: 0 auto; padding: 10px 20px 0; font-size: .8rem; color: #8a8a8a; }
+
+  /* scroll arrows — only shown when the rail overflows */
+  .scroll-btn {
+    display: none; flex: 0 0 auto;
+    width: 28px; height: 28px; padding: 0;
+    border-radius: 50%; border: 1px solid #e2dcd3; background: #fff;
+    color: #6b6b6b; cursor: pointer; font-family: inherit;
+    font-size: 1rem; line-height: 1;
+    align-items: center; justify-content: center;
+  }
+  .filterbar-inner.can-scroll .scroll-btn { display: flex; }
+  .scroll-btn:hover:not(:disabled) { border-color: #8a7a63; color: #1b1b1b; }
+  .scroll-btn:disabled { opacity: .3; cursor: default; }
+
+  /* "Categories" dropdown trigger */
+  .cat-toggle {
+    flex: 0 0 auto; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 14px; border-radius: 999px;
+    border: 1px solid #ddd7cf; background: #fff; color: #4a4a4a;
+    font-size: .85rem; font-family: inherit; cursor: pointer;
+    transition: .15s;
+  }
+  .cat-toggle:hover { border-color: #8a7a63; color: #1b1b1b; }
+  .cat-toggle svg { flex: 0 0 auto; }
+  .cat-toggle .chev { font-size: .7rem; transition: transform .18s; }
+  .cat-toggle[aria-expanded="true"] { border-color: #1b1b1b; color: #1b1b1b; }
+  .cat-toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+  /* dropdown panel listing every category */
+  .cat-panel {
+    position: absolute; left: 0; right: 0; top: 100%;
+    display: none;
+    background: #fff;
+    border-bottom: 1px solid #e9e5df;
+    box-shadow: 0 20px 40px -16px rgba(0,0,0,.22);
+    z-index: 40;
+  }
+  .cat-panel.open { display: block; animation: panelIn .14s ease-out; }
+  @keyframes panelIn { from { opacity: 0; transform: translateY(-6px); } }
+
+  .cat-panel-inner { max-width: 1200px; margin: 0 auto; padding: 14px 20px 18px; }
+  .cat-panel-head { display: flex; gap: 8px; align-items: center; }
+  .cat-search {
+    flex: 1 1 auto; min-width: 0;
+    padding: 9px 15px; border: 1px solid #ddd7cf; border-radius: 999px;
+    font-size: .85rem; font-family: inherit; outline: none; background: #fff;
+  }
+  .cat-search:focus { border-color: #8a7a63; }
+  .cat-close {
+    flex: 0 0 auto; width: 34px; height: 34px; padding: 0;
+    border-radius: 50%; border: 1px solid #e2dcd3; background: #fff;
+    color: #777; cursor: pointer; font-family: inherit; font-size: .8rem;
+  }
+  .cat-close:hover { border-color: #8a7a63; color: #1b1b1b; }
+
+  .cat-list {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+    gap: 6px;
+    max-height: 46vh; overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .cat-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 9px 13px; border-radius: 10px;
+    border: 1px solid #f0ece6; background: #fbfaf8;
+    font-size: .84rem; font-family: inherit; color: #3d3d3d;
+    text-align: left; cursor: pointer; transition: .13s;
+  }
+  .cat-item:hover { background: #f3efe9; border-color: #e3dbd0; }
+  .cat-item span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cat-item .n { flex: 0 0 auto; font-size: .7rem; color: #a89880; }
+  .cat-item.active { background: #1b1b1b; border-color: #1b1b1b; color: #fff; }
+  .cat-item.active .n { color: rgba(255,255,255,.6); }
+  .cat-empty { margin: 6px 2px; font-size: .84rem; color: #999; }
+
+  /* ---------- COUNT / GRID ---------- */
+  .count { max-width: 1200px; margin: 0 auto; padding: 14px 20px 0; font-size: .8rem; color: #8a8a8a; }
   .grid {
     max-width: 1200px; margin: 0 auto; padding: 14px 20px 60px;
     display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px;
@@ -61,7 +154,6 @@
   .thumb { position: relative; aspect-ratio: 4 / 5; background: #f2eee9; overflow: hidden; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-  /* photo-count badge on cards */
   .img-count {
     position: absolute; right: 8px; bottom: 8px;
     background: rgba(20,18,15,.72); color: #fff;
@@ -182,8 +274,16 @@
   footer { text-align: center; padding: 24px; font-size: .8rem; color: #9a9a9a; }
 
   @media (max-width: 700px) {
+    .header-inner { padding: 12px 16px 10px; }
+    .filterbar-inner { padding: 8px 16px; gap: 6px; }
+    .scroll-btn { display: none !important; }   /* touch scroll instead */
+    .cat-toggle-label { display: none; }
+    .cat-toggle { padding: 8px 11px; }
+    .cat-panel-inner { padding: 12px 16px 16px; }
+    .cat-list { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); max-height: 52vh; }
+    .count { padding: 12px 16px 0; }
     .modal-box { grid-template-columns: 1fr; }
-    .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; padding: 12px 16px 50px; }
     .card-body { padding: 10px 10px 13px; }
     .modal-info { padding: 20px; }
     .gal-thumb { width: 46px; height: 56px; }
@@ -197,9 +297,40 @@
     <h1 class="brand">My Catalog <span>Furniture &amp; Home</span></h1>
     <input class="search" id="search" type="search" placeholder="Search products…">
   </div>
+
+  <!-- FILTER BAR: scrolling chip rail + full category dropdown -->
+  <div class="filterbar" id="filterbar">
+    <div class="filterbar-inner" id="filterbarInner">
+      <button class="scroll-btn" id="chipPrev" type="button" aria-label="Scroll categories left">‹</button>
+      <div class="chips" id="filters"></div>
+      <button class="scroll-btn" id="chipNext" type="button" aria-label="Scroll categories right">›</button>
+
+      <button class="cat-toggle" id="catToggle" type="button"
+              aria-expanded="false" aria-controls="catPanel" aria-haspopup="true">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+             stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <rect x="1.5" y="1.5" width="5" height="5" rx="1.2"/>
+          <rect x="9.5" y="1.5" width="5" height="5" rx="1.2"/>
+          <rect x="1.5" y="9.5" width="5" height="5" rx="1.2"/>
+          <rect x="9.5" y="9.5" width="5" height="5" rx="1.2"/>
+        </svg>
+        <span class="cat-toggle-label">Categories</span>
+        <span class="chev" aria-hidden="true">▾</span>
+      </button>
+    </div>
+
+    <div class="cat-panel" id="catPanel">
+      <div class="cat-panel-inner">
+        <div class="cat-panel-head">
+          <input class="cat-search" id="catSearch" type="search" placeholder="Find a category…">
+          <button class="cat-close" id="catClose" type="button" aria-label="Close categories">✕</button>
+        </div>
+        <div class="cat-list" id="catList"></div>
+      </div>
+    </div>
+  </div>
 </header>
 
-<div class="filters" id="filters"></div>
 <div class="count" id="count"></div>
 <main class="grid" id="grid"></main>
 <p class="empty" id="empty">No products found.</p>
@@ -221,7 +352,7 @@
       <div id="mVariety"></div>
 
       <div class="modal-actions">
-        <a class="wa-btn" id="mWa" target="_blank" rel="noopener">Enquire on WhatsApp</a>
+        <a class="wa-btn" id="mWa" target="_blank" rel="noopener">WhatsApp</a>
         <button class="close-btn" id="closeBtn">Close</button>
       </div>
     </div>
@@ -247,7 +378,7 @@
 /* =========================================================================
    1) YOUR WHATSAPP NUMBER — country code, no +, no spaces, no dashes
    ========================================================================= */
-const WHATSAPP_NUMBER = "60123456789";
+const WHATSAPP_NUMBER = "601111213149";
 
 /* =========================================================================
    2) MATERIAL VARIETY  (shown on every product by default)
@@ -257,12 +388,12 @@ const WHATSAPP_NUMBER = "60123456789";
 const materials = [
   {
     name: "Rubberwood",
-    ids:  ["1kFZQtqdZWIpsEXZMw19eycDl-pgShhPK"],
+    ids:  ["1z-UyrgK-IGjCsMGKx5UeFr5DFnG_9na5"],
     desc: "Dense, durable hardwood with a smooth, even grain. Our most common solid wood option."
   },
   {
     name: "Pinewood",
-    ids:  ["10nCD2xnJJI8fKPKNJ99N7_qaLCJJVjCZ"],
+    ids:  ["14c7jdIAhb_HLjbkaUJ5HWC6Tlg9IwkK7"],
     desc: "Lightweight softwood with a warm, visible grain. Budget-friendly and easy to finish."
   },
   {
@@ -293,7 +424,10 @@ const finishes = [
   },
   {
     name: "Stain Colour",
-    ids:  ["1IcHFRx1D3wdBII1gNdzBTjBCKcpjFZrD"],
+    ids:  [
+      "1IcHFRx1D3wdBII1gNdzBTjBCKcpjFZrD",
+      "1JlNMe5TLmswCxWONmVmpVrskpsIdMv9E"
+    ],
     desc: "Semi-transparent stain in walnut, oak, teak or custom tones. Grain still shows through."
   },
   {
@@ -345,10 +479,12 @@ const products = [
   {//0000
     ids: [
       "1nVIsMmyO8lTM4A06OvHLrJFoJIWVG_f4",
-      "1PM5zVpAsGS3hH35c6JcL_rl2SDZ0JY-A",
-      "19vEtqkFo7MjyyqztXsBEOUtBt7HPOt33",
-      "1QqxZlmPnYDy9fcttLy8N66HbpqxX5DaE"
-    ],                     
+      "1XJCk1fUjOpGb4mYQuwI6z9zQfbptRdeB",
+      "13_uLmMrFJIS5Iq6txTnUQBQs8_zagkJx",
+      "1wh_upO3xuhPw_CRkEg4AzUrht2n5gG9Y",
+      "1ZX9DMoRWZEC82AikeDxR6ylgloqYV_oQ",
+      "15r6IfQPQwm_5imGZ8kvULf-PlbcPEbsg"
+    ],
     name: "Design Your Furniture Through Whatsapp",
     categories: ["Custom"],
     price: "Free",
@@ -356,78 +492,34 @@ const products = [
     materials: ["Rubberwood", "Pinewood", "Plywood", "Blockboard", "MDF Board"],
     finishes:  ["Clear Coating", "Stain Colour", "Paint Spray", "Laminate"]
   },
-  {//0001
+  {//0012
     ids: [
-      "1PM5zVpAsGS3hH35c6JcL_rl2SDZ0JY-A"
+      "1UBKm_yEqTlcFbI74WjJhABIIijasBw2P"
     ],
-    name: "Minimalist Wall Frame [0001]",
-    categories: ["Wall Frame", "Wall-Mounted"],
+    name: "Storage Cabinet with Glass Door & Shelf [0011]",
+    categories: ["Storage Cabinet", "Shelves & Rack Organizer", "Display Cabinet"],
     price: "",
     desc: "",
     materials: ["Rubberwood", "Pinewood"],
     finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
   },
-  {//0002
+  {//0011
     ids: [
-      "19vEtqkFo7MjyyqztXsBEOUtBt7HPOt33",
+      "1hRQKLJXZGOvCtHJImBwhcfxSgN_TQuuR"
     ],
-    name: "Multi-Level, Adjustable Shelf & Rack [0002]",
-    categories: ["Shelves & Rack"],
+    name: "Shelf Organizer & Storage with 3 Drawer [0011]",
+    categories: ["Storage Cabinet", "Shelves & Rack Organizer"],
     price: "",
     desc: "",
     materials: ["Rubberwood", "Pinewood"],
     finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
   },
-  {//0003
+  {//0010
     ids: [
-      "1QqxZlmPnYDy9fcttLy8N66HbpqxX5DaE"
+      "1lWrwBVhhhbeAMdfvDWRSBUOh2QUbQMOt"
     ],
-    name: "Key Holder Shelf [0003]",
-    categories: ["Wall-Mounted", "Shelves & Rack Organizer", "Key Holder"],
-    price: "",
-    desc: "",
-    materials: ["Rubberwood", "Pinewood"],
-    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
-  },
-  {//0004
-    ids: [
-      "15feIBVjK1qMwHDb22h6f_Y4hwn-aVeNl"
-    ],
-    name: "Helmet Shelves & Hook [0004]",
-    categories: ["Wall-Mounted", "Shelves & Rack Organizer", "Biker"],
-    price: "",
-    desc: "",
-    materials: ["Rubberwood", "Pinewood"],
-    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
-  },
-  {//0006
-    ids: [
-      "1SjhmWI-XNjuwumU81ohiLSJbQGVd72Ys"
-    ],
-    name: "Side Table with 2 Drawer [0006]",
-    categories: ["Side Table"],
-    price: "",
-    desc: "",
-    materials: ["Rubberwood", "Pinewood"],
-    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
-  },
-  {//0007
-    ids: [
-      "18PQc8JPPm0km96fS3GdQejkjYmSJE19I"
-    ],
-    name: "Serama Chicken Portable Nesting Box [0007]",
-    categories: ["Pet & Animal"],
-    price: "",
-    desc: "",
-    materials: ["Rubberwood", "Pinewood"],
-    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
-  },
-  {//0008
-    ids: [
-      "13HoVvydyAMGVsjHVSG-nM3FenBPKDDM6"
-    ],
-    name: "Multi-Level, Adjustable Shelf & Rack + 2 Drawer [0008]",
-    categories: ["Shelves & Rack Organizer"],
+    name: "Stand Table + Steel Leg [0010]",
+    categories: ["Table"],
     price: "",
     desc: "",
     materials: ["Rubberwood", "Pinewood"],
@@ -444,23 +536,78 @@ const products = [
     materials: ["Rubberwood", "Pinewood"],
     finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
   },
-  {//0010
+  {//0008
     ids: [
-      "1lWrwBVhhhbeAMdfvDWRSBUOh2QUbQMOt"
+      "13HoVvydyAMGVsjHVSG-nM3FenBPKDDM6"
     ],
-    name: "Stand Table + Steel Leg[0010]",
-    categories: ["Table"],
+    name: "Multi-Level, Adjustable Shelf & Rack + 2 Drawer [0008]",
+    categories: ["Shelves & Rack Organizer"],
     price: "",
     desc: "",
     materials: ["Rubberwood", "Pinewood"],
     finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
   },
-  {//0011
+  {//0007
     ids: [
-      "1hRQKLJXZGOvCtHJImBwhcfxSgN_TQuuR"
+      "18PQc8JPPm0km96fS3GdQejkjYmSJE19I"
     ],
-    name: "Shelf Organizer & Storage with 3 Drawer [0011]",
-    categories: ["Storage Cabinet", "Shelves & Rack Organizer"],
+    name: "Serama Chicken Portable Nesting Box [0007]",
+    categories: ["Pet & Animal"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
+  },
+  {//0006
+    ids: [
+      "1SjhmWI-XNjuwumU81ohiLSJbQGVd72Ys"
+    ],
+    name: "Side Table with 2 Drawer [0006]",
+    categories: ["Side Table"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
+  },
+  {//0004
+    ids: [
+      "15feIBVjK1qMwHDb22h6f_Y4hwn-aVeNl"
+    ],
+    name: "Helmet Shelves & Hook [0004]",
+    categories: ["Wall-Mounted", "Shelves & Rack Organizer", "Biker"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
+  },
+  {//0003
+    ids: [
+      "1QqxZlmPnYDy9fcttLy8N66HbpqxX5DaE"
+    ],
+    name: "Key Holder Shelf [0003]",
+    categories: ["Wall-Mounted", "Shelves & Rack Organizer", "Key Holder"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
+  },
+  {//0002
+    ids: [
+      "19vEtqkFo7MjyyqztXsBEOUtBt7HPOt33",
+    ],
+    name: "Multi-Level, Adjustable Shelf & Rack [0002]",
+    categories: ["Shelves & Rack"],
+    price: "",
+    desc: "",
+    materials: ["Rubberwood", "Pinewood"],
+    finishes:  ["Clear Coating", "Stain Colour", "Paint Spray"]
+  },
+  {//0001
+    ids: [
+      "1PM5zVpAsGS3hH35c6JcL_rl2SDZ0JY-A"
+    ],
+    name: "Minimalist Wall Frame [0001]",
+    categories: ["Wall Frame", "Wall-Mounted"],
     price: "",
     desc: "",
     materials: ["Rubberwood", "Pinewood"],
@@ -522,34 +669,132 @@ function galleryHTML(ids, activeIndex) {
   `).join("");
 }
 
+/* Tiny text escaper for category names coming out of the data */
+const esc = s => String(s).replace(/[&<>"']/g, m =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+
 /* ---------- State ---------- */
 let activeCategory = "All";
 let searchTerm = "";
+let categoryList = [];          // [{ name, count }]
 
 let modalIds = [];
 let lbIds = [];
 
-const gridEl    = document.getElementById("grid");
-const filtersEl = document.getElementById("filters");
-const countEl   = document.getElementById("count");
-const emptyEl   = document.getElementById("empty");
-const searchEl  = document.getElementById("search");
-const modal     = document.getElementById("modal");
-const lightbox  = document.getElementById("lightbox");
+const gridEl        = document.getElementById("grid");
+const countEl       = document.getElementById("count");
+const emptyEl       = document.getElementById("empty");
+const searchEl      = document.getElementById("search");
+const modal         = document.getElementById("modal");
+const lightbox      = document.getElementById("lightbox");
 
-const mImg      = document.getElementById("mImg");
-const mThumbs   = document.getElementById("mThumbs");
-const lbImg     = document.getElementById("lbImg");
-const lbThumbs  = document.getElementById("lbThumbs");
+const mImg          = document.getElementById("mImg");
+const mThumbs       = document.getElementById("mThumbs");
+const lbImg         = document.getElementById("lbImg");
+const lbThumbs      = document.getElementById("lbThumbs");
 
-/* ---------- Build category chips automatically ----------
-   Collects every category from every product (supports multi-category)
-   and de-duplicates them. Order = first appearance. */
-function buildFilters() {
-  const cats = ["All", ...new Set(products.flatMap(catsOf))];
-  filtersEl.innerHTML = cats.map(c =>
-    `<button class="chip${c === activeCategory ? " active" : ""}" data-cat="${c}">${c}</button>`
+/* category UI */
+const chipsEl       = document.getElementById("filters");
+const filterbarIn   = document.getElementById("filterbarInner");
+const chipPrev      = document.getElementById("chipPrev");
+const chipNext      = document.getElementById("chipNext");
+const catToggle     = document.getElementById("catToggle");
+const catPanel      = document.getElementById("catPanel");
+const catList       = document.getElementById("catList");
+const catSearch     = document.getElementById("catSearch");
+const catClose      = document.getElementById("catClose");
+
+/* =========================================================================
+   CATEGORY INDEX — collected once from the products, de-duplicated,
+   alphabetical (scales far better than insertion order once you have
+   dozens of categories), with a product count per category.
+   ========================================================================= */
+function collectCategories() {
+  const map = new Map();
+  products.forEach(p => catsOf(p).forEach(c => map.set(c, (map.get(c) || 0) + 1)));
+  return [...map.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/* All categories prefixed with "All" */
+function categoriesWithAll() {
+  return [{ name: "All", count: products.length }, ...categoryList];
+}
+
+/* ---------- Scrollable chip rail ---------- */
+function buildChipRail() {
+  chipsEl.innerHTML = categoriesWithAll().map(c =>
+    `<button class="chip${c.name === activeCategory ? " active" : ""}"
+             type="button" data-cat="${esc(c.name)}">${esc(c.name)}</button>`
   ).join("");
+  updateScrollButtons();
+  requestAnimationFrame(() => {
+    const active = chipsEl.querySelector(".chip.active");
+    if (active) scrollChipIntoView(active);
+  });
+}
+
+function updateScrollButtons() {
+  const max = chipsEl.scrollWidth - chipsEl.clientWidth;
+  filterbarIn.classList.toggle("can-scroll", max > 4);
+  chipPrev.disabled = chipsEl.scrollLeft <= 2;
+  chipNext.disabled = chipsEl.scrollLeft >= max - 2;
+}
+
+function scrollChipIntoView(chip) {
+  const rail = chipsEl.getBoundingClientRect();
+  const r = chip.getBoundingClientRect();
+  if (r.left < rail.left) {
+    chipsEl.scrollTo({ left: chipsEl.scrollLeft - (rail.left - r.left) - 14, behavior: "smooth" });
+  } else if (r.right > rail.right) {
+    chipsEl.scrollTo({ left: chipsEl.scrollLeft + (r.right - rail.right) + 14, behavior: "smooth" });
+  }
+}
+
+/* ---------- Full category dropdown ---------- */
+function buildCatList(filterText = "") {
+  const q = filterText.trim().toLowerCase();
+  const items = categoriesWithAll().filter(c => !q || c.name.toLowerCase().includes(q));
+
+  if (!items.length) {
+    catList.innerHTML = `<p class="cat-empty">No category matches “${esc(filterText)}”.</p>`;
+    return;
+  }
+  catList.innerHTML = items.map(c => `
+    <button class="cat-item${c.name === activeCategory ? " active" : ""}"
+            type="button" data-cat="${esc(c.name)}">
+      <span>${esc(c.name)}</span>
+      <span class="n">${c.count}</span>
+    </button>`).join("");
+}
+
+function openCatPanel() {
+  buildCatList();
+  catSearch.value = "";
+  catPanel.classList.add("open");
+  catToggle.setAttribute("aria-expanded", "true");
+  if (window.innerWidth > 700) catSearch.focus();
+}
+
+function closeCatPanel() {
+  catPanel.classList.remove("open");
+  catToggle.setAttribute("aria-expanded", "false");
+}
+
+/* ---------- Switch category (single source of truth) ---------- */
+function setActiveCategory(cat) {
+  activeCategory = cat;
+
+  [...chipsEl.children].forEach(b =>
+    b.classList.toggle("active", b.dataset.cat === cat));
+  [...catList.children].forEach(b =>
+    b.classList.toggle("active", b.dataset.cat === cat));
+
+  const activeChip = chipsEl.querySelector(".chip.active");
+  if (activeChip) scrollChipIntoView(activeChip);
+
+  render();
 }
 
 /* ---------- Render products ---------- */
@@ -578,16 +823,19 @@ function render() {
           ${badge}
         </div>
         <div class="card-body">
-          <div class="cat-tag">${catsOf(p).join(" · ")}</div>
-          <h3>${p.name}</h3>
+          <div class="cat-tag">${catsOf(p).map(esc).join(" · ")}</div>
+          <h3>${esc(p.name)}</h3>
           <div class="price">${p.price || ""}</div>
         </div>
       </article>
     `;
   }).join("");
 
-  countEl.textContent = `${list.length} product${list.length === 1 ? "" : "s"}`;
+  const label = activeCategory === "All" ? "" : ` · ${activeCategory}`;
+  countEl.textContent = `${list.length} product${list.length === 1 ? "" : "s"}${label}`;
   emptyEl.style.display = list.length ? "none" : "block";
+
+  updateScrollButtons();
 }
 
 /* ---------- Build one variety block ---------- */
@@ -681,20 +929,61 @@ function closeLightbox() {
   lightbox.classList.remove("open");
 }
 
-/* ---------- Events ---------- */
-filtersEl.addEventListener("click", e => {
+/* =========================================================================
+   EVENTS
+   ========================================================================= */
+
+/* chip rail clicks */
+chipsEl.addEventListener("click", e => {
   const btn = e.target.closest(".chip");
   if (!btn) return;
-  activeCategory = btn.dataset.cat;
-  buildFilters();
-  render();
+  closeCatPanel();
+  setActiveCategory(btn.dataset.cat);
 });
 
+/* rail scroll position → enable/disable arrows */
+let scrollTick = false;
+chipsEl.addEventListener("scroll", () => {
+  if (scrollTick) return;
+  scrollTick = true;
+  requestAnimationFrame(() => { updateScrollButtons(); scrollTick = false; });
+});
+
+chipPrev.addEventListener("click", () =>
+  chipsEl.scrollBy({ left: -Math.max(180, chipsEl.clientWidth * 0.7), behavior: "smooth" }));
+chipNext.addEventListener("click", () =>
+  chipsEl.scrollBy({ left:  Math.max(180, chipsEl.clientWidth * 0.7), behavior: "smooth" }));
+
+window.addEventListener("resize", updateScrollButtons);
+
+/* dropdown open / close */
+catToggle.addEventListener("click", () => {
+  catPanel.classList.contains("open") ? closeCatPanel() : openCatPanel();
+});
+catClose.addEventListener("click", closeCatPanel);
+
+catSearch.addEventListener("input", e => buildCatList(e.target.value));
+
+catList.addEventListener("click", e => {
+  const btn = e.target.closest(".cat-item");
+  if (!btn) return;
+  setActiveCategory(btn.dataset.cat);
+  closeCatPanel();
+});
+
+/* click outside the filter bar closes the dropdown */
+document.addEventListener("click", e => {
+  if (!catPanel.classList.contains("open")) return;
+  if (!e.target.closest("#filterbar")) closeCatPanel();
+});
+
+/* search box */
 searchEl.addEventListener("input", e => {
   searchTerm = e.target.value.trim();
   render();
 });
 
+/* open product */
 gridEl.addEventListener("click", e => {
   const card = e.target.closest(".card");
   if (card) openModal(card.dataset.key);
@@ -734,11 +1023,14 @@ document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   if (lightbox.classList.contains("open")) closeLightbox();
   else if (modal.classList.contains("open")) closeModal();
+  else if (catPanel.classList.contains("open")) closeCatPanel();
 });
 
 /* ---------- Init ---------- */
 document.getElementById("year").textContent = new Date().getFullYear();
-buildFilters();
+categoryList = collectCategories();
+buildChipRail();
+buildCatList();
 render();
 </script>
 </body>
